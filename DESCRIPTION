@@ -1,11 +1,13 @@
 Package: cleaningtools
-Title: cleaningtools package focuses on data cleaning
-Version: 0.0.0.9003
+Title: Tools for Data Cleaning, with FormShare
+Version: 0.1.0
 Authors@R: c(
     person("Mehedi", "Khan", , "mh.khan@reach-initiative.org", role = "aut",
            comment = c(ORCID = "0000-0002-4276-4485")),
-    person("Yann", "Say", , "yann.say@impact-initiatives.org", role = c("cre", "aut"),
-           comment = c(ORCID = "0000-0002-7390-4209"))
+    person("Yann", "Say", , "yann.say@impact-initiatives.org", role = "aut",
+           comment = c(ORCID = "0000-0002-7390-4209")),
+    person("Carlos", "Quiros", , "cquiros@qlands.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-9485-9961", "the FormShare integration"))
   )
 Description: The cleaningtools package focuses on cleaning, and has three
     components: **Check**, which includes a set of functions that flag
@@ -13,21 +15,28 @@ Description: The cleaningtools package focuses on cleaning, and has three
     includes a set of functions to create different items for use in
     cleaning, such as the cleaning log from the checks, clean data, and
     enumerator performance.  **Review**, which includes a set of functions
-    to review the cleaning.
+    to review the cleaning. This version, from IMPACT Initiatives'
+    cleaningtools, adds FormShare: it reads a form's data, questions,
+    choices and ODK audits from a FormShare server, writes the corrections
+    of a cleaning log there through FormShare's cleaning API, and reviews
+    the cleaning against FormShare's record of changes.
 License: MIT + file LICENSE
-URL: https://impact-initiatives.github.io/cleaningtools/
-Depends: 
+URL: https://github.com/qlands/cleaningtools,
+    https://impact-initiatives.github.io/cleaningtools/
+Depends:
     R (>= 4.0)
 Imports:
     assertthat,
     cluster,
     data.table,
     dplyr,
+    FormShare (>= 1.1.0),
     fs,
     glue,
     magrittr,
     openxlsx,
     purrr,
+    readxl,
     rlang,
     snakecase,
     stats,
@@ -37,13 +46,13 @@ Imports:
     tidyr,
     tidyselect,
     utils
-Suggests: 
+Remotes:
+    qlands/formshare-R-package
+Suggests:
     knitr,
     rmarkdown,
     testthat (>= 3.0.0),
     tidyverse
-VignetteBuilder: 
-    knitr
 Config/testthat/edition: 3
 Encoding: UTF-8
 LazyData: true

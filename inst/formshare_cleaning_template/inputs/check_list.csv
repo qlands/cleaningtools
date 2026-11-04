@@ -1,0 +1,3 @@
+check_id,description,check_to_perform,columns_to_clean
+check_household_size,The household has more than 20 members,members_n > 20,members_n
+check_children,More children under 5 than members,children_under_5 > members_n,"children_under_5, members_n"

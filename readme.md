@@ -1,3 +1,109 @@
+## cleaningtools, with FormShare
+
+This is IMPACT Initiatives' [cleaningtools](https://github.com/impact-initiatives/cleaningtools)
+with [FormShare](https://github.com/qlands/FormShare) added. Everything the
+original package does, it still does, in the same way: the documentation below
+the line is the original's. What this version adds is for working with a
+FormShare server from R, without exports and without FormShare's own data
+quality pages:
+
+- **Reading.** The checks run on the data as the server holds it now, read
+  through the [FormShare R package](https://github.com/qlands/formshare-R-package).
+  The form's questions and choices come from FormShare too, in the shape of the
+  XLSForm sheets the functions take (`kobo_survey`, `kobo_choices`), and the
+  ODK audits come from FormShare instead of a zip of audit.csv files.
+- **Writing.** The corrections of a filled cleaning log are made in FormShare,
+  through its cleaning API, each with its reason. They are not made in a copy of
+  the data. FormShare's audit log records the old value, the new one, who made
+  the change and why.
+- **Reviewing.** The cleaning is reviewed against what FormShare recorded,
+  instead of against a raw and a clean copy of the data.
+
+### Acknowledgment
+
+cleaningtools was written by Mehedi Khan and Yann Say for IMPACT Initiatives and
+REACH, who use it to clean humanitarian survey data. Its checks, the cleaning
+log and the review are their work. This version is published under the same MIT
+licence, with their copyright notice. QLands Software added the FormShare
+functions (`R/formshare_*.R`) and the changes listed in NEWS.md.
+
+### Installation
+
+```r
+# install.packages("remotes")
+remotes::install_github("qlands/formshare-R-package")
+remotes::install_github("qlands/cleaningtools", ref = "FormShare")
+```
+
+The server needs FormShare's Analytics plugin and Remote SQL plugin (2.1 or
+later). Your API key and secret are in your FormShare profile. Writing
+corrections uses the API key of an assistant who may clean the form.
+
+### The workflow
+
+```r
+library(cleaningtools)
+
+connection <- fs_connect("https://formshare.org", "my_user", "my_key", "my_secret",
+  assistant_api_key = "a_cleaning_assistant_key"
+)
+repository <- "FS_xxxx" # its form_schema in connection$get_repositories()
+
+# 1. Read: the data, and the form's questions and choices
+households <- fs_read_data(connection, repository)
+survey <- fs_survey(connection, repository)
+choices <- fs_choices(connection, repository)
+
+# 2. Check, as with any data: a record is named by its rowuuid
+log <- households |>
+  check_outliers(uuid_column = "rowuuid", kobo_survey = survey, kobo_choices = choices) |>
+  check_soft_duplicates(kobo_survey = survey, uuid_column = "rowuuid", group_column = "_submitted_by") |>
+  fs_check_pii(survey = survey) |>
+  create_combined_log() |>
+  add_info_to_cleaning_log(dataset_uuid_column = "rowuuid",
+                           information_to_add = c("_submitted_by", "_submitted_date"))
+create_xlsx_cleaning_log(log, use_dropdown = TRUE, kobo_survey = survey,
+                         kobo_choices = choices, output_path = "cleaning_log.xlsx")
+
+# 3. Apply the filled log in FormShare: a dry run first, then for real
+filled <- readxl::read_excel("cleaning_log_filled.xlsx", sheet = "cleaning_log")
+fs_apply_cleaning_log(connection, repository, filled)
+fs_apply_cleaning_log(connection, repository, filled, dry_run = FALSE)
+
+# 4. Review what FormShare recorded against the log
+fs_review_cleaning(connection, repository, filled)
+```
+
+`create_formshare_cleaning_template()` copies a template project with the
+whole workflow, as `create_cleaning_template()` does for the original.
+
+### What FormShare changes
+
+| cleaningtools | With FormShare |
+|---|---|
+| A CSV export and the XLSForm's sheets | `fs_read_data()`, `fs_survey()`, `fs_choices()`, `fs_xlsform()` |
+| `create_audit_list()` from a zip | `fs_audit_list()` reads FormShare's ODK audits into the same list; `add_duration_from_audit()` takes it as it is |
+| `create_clean_data()` builds a clean copy | `fs_check_cleaning_log()` checks each entry against FormShare, and `fs_apply_cleaning_log()` makes the corrections there, each with its reason. `remove_survey` entries are listed, unless you ask for them to be deleted or moved to the logs |
+| `review_cleaning()` compares a raw and a clean copy | `fs_change_log()` reads FormShare's record of changes, and `fs_review_cleaning()` compares it with the log |
+| `check_pii()` looks at column names | `fs_check_pii()` adds what FormShare marks as sensitive or encrypted |
+| Kobo's select multiple columns (`crops.maize`) | FormShare keeps the codes in one column; `fs_expand_select_multiple()` adds a column per option for the functions that read them |
+| `check_soft_duplicates()` over every survey | `group_column = "_submitted_by"` compares each interview with the same assistant's other interviews |
+
+### Fixed in the original functions
+
+- `create_clean_data()` keeps each column's type: it used to guess the types
+  again, which turned an identifier "007" into 7. It also accepts the
+  `all_data` rows it applies.
+- `add_duration()` also reads date-times as FormShare gives them, and computes
+  the duration as a real time difference, across midnight.
+- `check_outliers()` leaves out FormShare's own columns, which start with an
+  underscore (`_dqscore`, `_cellxpos`...), as it left out Kobo's `X_` columns.
+- `check_fcs()` given the list the checks pass along adds a log that goes into
+  `create_combined_log()`.
+- The Excel cleaning log colours its groups from a fixed palette, without
+  randomcoloR, which needed V8.
+
+---
 
 ## cleaningtools
 

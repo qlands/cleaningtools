@@ -4,23 +4,25 @@
 \name{cleaningtools-package}
 \alias{cleaningtools}
 \alias{cleaningtools-package}
-\title{cleaningtools: cleaningtools package focuses on data cleaning}
+\title{cleaningtools: Tools for Data Cleaning, with FormShare}
 \description{
-The cleaningtools package focuses on cleaning, and has three components: **Check**, which includes a set of functions that flag values, such as check_outliers and check_logical. **Create**, which includes a set of functions to create different items for use in cleaning, such as the cleaning log from the checks, clean data, and enumerator performance. **Review**, which includes a set of functions to review the cleaning.
+The cleaningtools package focuses on cleaning, and has three components: **Check**, which includes a set of functions that flag values, such as check_outliers and check_logical. **Create**, which includes a set of functions to create different items for use in cleaning, such as the cleaning log from the checks, clean data, and enumerator performance. **Review**, which includes a set of functions to review the cleaning. This version, from IMPACT Initiatives' cleaningtools, adds FormShare: it reads a form's data, questions, choices and ODK audits from a FormShare server, writes the corrections of a cleaning log there through FormShare's cleaning API, and reviews the cleaning against FormShare's record of changes.
 }
 \seealso{
 Useful links:
 \itemize{
+  \item \url{https://github.com/qlands/cleaningtools}
   \item \url{https://impact-initiatives.github.io/cleaningtools/}
 }
 
 }
 \author{
-\strong{Maintainer}: Yann Say \email{yann.say@impact-initiatives.org} (\href{https://orcid.org/0000-0002-7390-4209}{ORCID})
+\strong{Maintainer}: Carlos Quiros \email{cquiros@qlands.com} (\href{https://orcid.org/0000-0002-9485-9961}{ORCID}) (the FormShare integration)
 
 Authors:
 \itemize{
   \item Mehedi Khan \email{mh.khan@reach-initiative.org} (\href{https://orcid.org/0000-0002-4276-4485}{ORCID})
+  \item Yann Say \email{yann.say@impact-initiatives.org} (\href{https://orcid.org/0000-0002-7390-4209}{ORCID})
 }
 
 }

@@ -8,3 +8,6 @@
 ^pkgdown$
 ^CODE_OF_CONDUCT\.md$
 ^codecov\.yml$
+^README\.Rmd$
+^readme\.md$
+^setting_testthat\.R$
