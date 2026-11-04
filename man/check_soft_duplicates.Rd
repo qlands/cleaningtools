@@ -12,7 +12,8 @@ check_soft_duplicates(
   sm_separator = ".",
   log_name = "soft_duplicate_log",
   threshold = 7,
-  return_all_results = FALSE
+  return_all_results = FALSE,
+  group_column = NULL
 )
 }
 \arguments{
@@ -33,6 +34,11 @@ stored as "checked_dataset"}
 
 \item{return_all_results}{By default, the function will return only the values that are under the
 threshold. Default is FALSE.}
+
+\item{group_column}{Optional column whose groups are compared separately, for example
+the enumerator ("_submitted_by" in FormShare): each survey is compared only with the
+surveys of its group, and the log gains a \code{group} column. A group of one survey is left
+out, having nothing to be compared with. Default is NULL (all surveys together).}
 }
 \value{
 return a list with the dataset checked stored as checked_dataset and

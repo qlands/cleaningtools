@@ -28,7 +28,6 @@ Imports:
     magrittr,
     openxlsx,
     purrr,
-    randomcoloR,
     rlang,
     snakecase,
     stats,

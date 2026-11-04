@@ -105,13 +105,16 @@ check_outliers <- function(dataset,
     cols_name_exist_in_loop_kobo <- interger_column_in_kobo[interger_column_in_kobo %in% names(dataset)]
   }
 
+  # Not the platforms' own columns: Kobo's start with X_ once read by
+  # read.csv, and with _ otherwise; FormShare's (_cellxpos, _elevation,
+  # _dqscore...) start with _
   cols_name_exist_in_loop_numeric <- dataset %>%
     dplyr::select_if(is.numeric) %>%
-    dplyr::select(-dplyr::starts_with("X")) %>%
+    dplyr::select(-dplyr::starts_with("X"), -dplyr::starts_with("_")) %>%
     names()
   cols_name_exist_in_loop_int <- dataset %>%
     dplyr::select_if(is.integer) %>%
-    dplyr::select(-dplyr::starts_with("X")) %>%
+    dplyr::select(-dplyr::starts_with("X"), -dplyr::starts_with("_")) %>%
     names()
 
   if (!is.null(kobo_survey) & !is.null(kobo_choices)) {

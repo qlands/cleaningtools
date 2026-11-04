@@ -70,13 +70,11 @@ create_formated_wb <- function(write_list,
     if (!is.null(column_for_color)) {
       u <- unique(dataset[[column_for_color]])
 
-      for (x in u) {
-        y <- which(dataset[[column_for_color]] == x)
-
-        random.color <- randomcoloR::randomColor(1, luminosity = "light")
+      for (x in seq_along(u)) {
+        y <- which(dataset[[column_for_color]] == u[x])
 
         style <- openxlsx::createStyle(
-          fgFill = random.color,
+          fgFill = light_colour(x),
           fontSize = body_front_size,
           fontName = body_front,
           border = "TopBottomLeftRight ",
@@ -95,6 +93,17 @@ create_formated_wb <- function(write_list,
 }
 
 
+
+# The fill of the n-th group of rows. The colours only tell neighbouring groups
+# apart, so a fixed cycle of light colours does it, the same on every run;
+# randomcoloR did it at random, at the cost of a V8 dependency.
+light_colour <- function(n) {
+  palette <- c(
+    "#FDE2E4", "#DFE7FD", "#E2F0CB", "#FFF1E6", "#CDDAFD", "#FAD2E1",
+    "#D8E2DC", "#FFE5D9", "#BEE1E6", "#F0EFEB", "#E2ECE9", "#FCF5C7"
+  )
+  palette[(n - 1) %% length(palette) + 1]
+}
 
 #' Creates formatted excel for cleaning log
 #'

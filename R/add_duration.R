@@ -4,8 +4,10 @@
 #' @param dataset dataset to add the duration
 #' @param duration_column the name of the duration variable that will be created.
 #' @param uuid_column uuid column in the dataset. Default is uuid.
-#' @param start_column start time of the survey, in KOBO format (e.g "2021-07-14T14:02:24.955+03:00")
-#' @param end_column end time of the survey, in KOBO format (e.g "2021-07-14T14:03:28.955+03:00")
+#' @param start_column start time of the survey, in KOBO format (e.g "2021-07-14T14:02:24.955+03:00"),
+#' or as FormShare gives it: a POSIXct, or text such as "2021-07-14 14:02:24"
+#' @param end_column end time of the survey, in KOBO format (e.g "2021-07-14T14:03:28.955+03:00"),
+#' or as FormShare gives it: a POSIXct, or text such as "2021-07-14 14:03:28"
 #'
 #' @return the clean dataset with 6 new columns: duration, start_date, start_time, end_date, end_time, days_diff
 #' @export
@@ -63,6 +65,13 @@ add_duration <- function(dataset, duration_column = "duration",
     stop("There is already a variable called duration_column in your dataset, please input another duration_column")
   }
 
+  # FormShare stores start and end as date-times: R gets them as POSIXct, or as
+  # text such as "2026-11-04 10:30:00". Their difference is a real time
+  # difference, across days and time changes.
+  if (is_datetime_column(dataset[[start_column]]) && is_datetime_column(dataset[[end_column]])) {
+    return(add_duration_from_datetimes(dataset, duration_column, start_column, end_column))
+  }
+
   # the function only runs if start_column and end_column are in the KOBO format "date T hour"
   if ((all(grepl("T", dataset[[start_column]]) | is.na(dataset[[start_column]])) & all(grepl("T", dataset[[end_column]]) | is.na(dataset[[end_column]]))) |
     all(grepl("^\\d{4}/\\d{2}/\\d{2}\\s\\d{2}:\\d{2}:\\d{2}$", dataset[[start_column]])) & all(grepl("^\\d{4}/\\d{2}/\\d{2}\\s\\d{2}:\\d{2}:\\d{2}$", dataset[[end_column]]))) {
@@ -104,4 +113,37 @@ add_duration <- function(dataset, duration_column = "duration",
   } else {
     stop("The dates are not in the correct format, the duration cannot be computed")
   }
+}
+
+# A column of date-times as FormShare gives them: POSIXct, or text such as
+# "2026-11-04 10:30:00" (a space, not Kobo's "T", between date and time).
+is_datetime_column <- function(values) {
+  if (inherits(values, "POSIXt")) {
+    return(TRUE)
+  }
+  if (!is.character(values)) {
+    return(FALSE)
+  }
+  present <- values[!is.na(values)]
+  length(present) > 0 &&
+    all(grepl("^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}(:\\d{2}(\\.\\d+)?)?$", present))
+}
+
+# The duration in minutes between two date-time columns, with the same columns
+# add_duration() adds for Kobo's formats: start_date, start_time, end_date,
+# end_time and days_diff. Both are read in one time zone, so a time change
+# between them cannot shift the difference.
+add_duration_from_datetimes <- function(dataset, duration_column, start_column, end_column) {
+  start <- as.POSIXct(dataset[[start_column]], tz = "UTC")
+  end <- as.POSIXct(dataset[[end_column]], tz = "UTC")
+  if (any(is.na(start)) || any(is.na(end))) {
+    warning("There are some observations for which either start or end is missing. The duration will not be computed for these")
+  }
+  dataset$start_date <- format(start, "%Y-%m-%d")
+  dataset$start_time <- format(start, "%H:%M:%S")
+  dataset$end_date <- format(end, "%Y-%m-%d")
+  dataset$end_time <- format(end, "%H:%M:%S")
+  dataset$days_diff <- difftime(as.Date(end), as.Date(start), units = "days")
+  dataset[[duration_column]] <- as.numeric(difftime(end, start, units = "mins"))
+  dataset
 }

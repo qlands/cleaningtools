@@ -14,7 +14,8 @@ check_fcs(
   vegetables_column = "fs_fcs_vegetableleave",
   fruits_column = "fs_fcs_fruit",
   oil_column = "fs_fcs_fat",
-  sugar_column = "fs_fcs_sugar"
+  sugar_column = "fs_fcs_sugar",
+  log_name = "fcs_log"
 )
 }
 \arguments{
@@ -37,10 +38,21 @@ check_fcs(
 \item{oil_column}{Variable name for- In the last 7 days, on how many days did your household eat oil, fat, or butter?}
 
 \item{sugar_column}{Variable name for- In the last 7 days, on how many days did your household eat sugar or sugary foods?}
+
+\item{log_name}{name of the log when the input is a list. Default is "fcs_log".}
 }
 \value{
-dataset with potential issues
+the flagged records as a data frame, or with a list as input, the
+list with the log added
 }
 \description{
-FCS component checks
+Flags the records whose eight food consumption answers are all the same
+(every group eaten on the same number of days).
+}
+\details{
+Given a data frame, it returns a data frame of the flagged records, as it
+always has. Given the list the other checks pass along (with the dataset as
+"checked_dataset"), it adds a log in the cleaning log's format (uuid,
+question, old_value, issue) under \code{log_name}, so that it goes into
+\code{\link[=create_combined_log]{create_combined_log()}} with the rest.
 }

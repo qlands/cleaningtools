@@ -72,6 +72,10 @@ create_clean_data <- function(raw_dataset,
                               NA_response_value = "blank_response",
                               no_change_value = "no_action",
                               remove_survey_value = "remove_survey") {
+  # The changes are made on text; each column gets its own type back at the
+  # end (restore_column_types), rather than a type guessed again from the
+  # values, which turned an identifier "007" into 7.
+  original_types <- raw_dataset
   raw_dataset <- raw_dataset %>% dplyr::mutate_all(as.character)
   cleaning_log <- cleaning_log %>% dplyr::mutate_all(as.character)
 
@@ -137,15 +141,17 @@ create_clean_data <- function(raw_dataset,
     print(paste0(problem_question_in_cl, ": Not found in the dataset"))
   }
 
-  if (all(cleaning_log[[cleaning_log_uuid_column]] %in% raw_dataset[[raw_data_uuid_column]] == F)) {
+  # "all_data" names every row: a change to a whole column
+  known_uuids <- c(raw_dataset[[raw_data_uuid_column]], "all_data")
+  if (!all(cleaning_log[[cleaning_log_uuid_column]] %in% known_uuids)) {
     problem_uuid_in_cl <-
-      cleaning_log[[cleaning_log_uuid_column]][cleaning_log[[cleaning_log_uuid_column]] %in% c(raw_dataset[[raw_data_uuid_column]], "all_data") == FALSE]
+      cleaning_log[[cleaning_log_uuid_column]][!cleaning_log[[cleaning_log_uuid_column]] %in% known_uuids]
     print(problem_uuid_in_cl)
-    print("Not found in the datase")
+    print("Not found in the dataset")
   }
   assertthat::assert_that(all(cl_change_response[[cleaning_log_question_column]] %in% colnames(raw_dataset)),
                           msg = "Make sure all names in cleaning_log_question_column values in the cleaning log are in dataset")
-  assertthat::assert_that(all(cleaning_log[[cleaning_log_uuid_column]] %in% raw_dataset[[raw_data_uuid_column]]),
+  assertthat::assert_that(all(cleaning_log[[cleaning_log_uuid_column]] %in% known_uuids),
                           msg = "Make sure all uuids in cleaing log are in data set")
 
   if (nrow(cl_change_response) > 0) {
@@ -177,7 +183,51 @@ create_clean_data <- function(raw_dataset,
     print("no surveys to remove in log")
   }
 
-  return(raw_dataset %>% utils::type.convert(as.is = T))
+  return(restore_column_types(raw_dataset, original_types))
+}
+
+
+# Gives each column of `dataset` (all text) the type it has in `original`. A
+# column whose new values cannot take that type stays text, with a warning,
+# rather than losing them to NA. A logical column takes "1"/"0" as well as
+# TRUE/FALSE, as the cleaning log's select multiple dropdowns write them.
+restore_column_types <- function(dataset, original) {
+  for (column in intersect(names(dataset), names(original))) {
+    values <- dataset[[column]]
+    template <- original[[column]]
+    converted <- if (is.logical(template)) {
+      dplyr::case_when(
+        values %in% c("TRUE", "true", "1") ~ TRUE,
+        values %in% c("FALSE", "false", "0") ~ FALSE,
+        TRUE ~ NA
+      )
+    } else if (is.integer(template)) {
+      # as.integer("7000.5") is 7000: a value with a fraction makes the
+      # column a double instead of being cut
+      numbers <- suppressWarnings(as.numeric(values))
+      if (all(is.na(numbers) | numbers == round(numbers))) as.integer(numbers) else numbers
+    } else if (is.numeric(template)) {
+      suppressWarnings(as.numeric(values))
+    } else if (inherits(template, "Date")) {
+      suppressWarnings(as.Date(values))
+    } else if (inherits(template, "POSIXct")) {
+      tz <- attr(template, "tzone")
+      suppressWarnings(as.POSIXct(values, tz = if (is.null(tz)) "" else tz))
+    } else if (is.factor(template)) {
+      factor(values, levels = union(levels(template), unique(values[!is.na(values)])))
+    } else {
+      values
+    }
+    lost <- !is.na(values) & is.na(converted)
+    if (any(lost)) {
+      warning(glue::glue(
+        "{column} keeps text values: {sum(lost)} cannot be read as {class(template)[1]}"
+      ))
+      next
+    }
+    dataset[[column]] <- converted
+  }
+  dataset
 }
 
 

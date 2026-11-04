@@ -10,6 +10,10 @@
 #' @param threshold flag all entries less or equal a specified threshold. The default is 7.
 #' @param return_all_results By default, the function will return only the values that are under the
 #' threshold. Default is FALSE.
+#' @param group_column Optional column whose groups are compared separately, for example
+#' the enumerator ("_submitted_by" in FormShare): each survey is compared only with the
+#' surveys of its group, and the log gains a `group` column. A group of one survey is left
+#' out, having nothing to be compared with. Default is NULL (all surveys together).
 #'
 #' @return return a list with the dataset checked stored as checked_dataset and
 #' a dataframe with the soft duplicate log
@@ -54,7 +58,8 @@ check_soft_duplicates <- function(dataset,
                                   sm_separator = ".",
                                   log_name = "soft_duplicate_log",
                                   threshold = 7,
-                                  return_all_results = FALSE) {
+                                  return_all_results = FALSE,
+                                  group_column = NULL) {
   if (is.data.frame(dataset)) {
     dataset <- list(checked_dataset = dataset)
   }
@@ -68,7 +73,38 @@ check_soft_duplicates <- function(dataset,
     stop(msg)
   }
 
-  df <- dataset$checked_dataset
+  if (!is.null(group_column)) {
+    if (!group_column %in% names(dataset[["checked_dataset"]])) {
+      stop(glue::glue("Cannot find ", group_column, " in the names of the dataset"))
+    }
+    groups <- split(dataset[["checked_dataset"]], dataset[["checked_dataset"]][[group_column]])
+    groups <- groups[vapply(groups, nrow, integer(1)) > 1]
+    outdata <- purrr::imap(groups, function(group_data, group) {
+      soft_duplicates_of(group_data, kobo_survey, uuid_column, idnk_value, sm_separator,
+                         threshold, return_all_results) %>%
+        dplyr::mutate(group = group)
+    }) %>%
+      dplyr::bind_rows()
+    if (nrow(outdata) == 0) {
+      outdata <- data.frame(uuid = character(0), issue = character(0), group = character(0))
+    }
+  } else {
+    outdata <- soft_duplicates_of(dataset[["checked_dataset"]], kobo_survey, uuid_column,
+                                  idnk_value, sm_separator, threshold, return_all_results)
+  }
+
+  dataset[[log_name]] <- as.data.frame(outdata)
+  return(dataset)
+}
+
+
+# The soft-duplicate log of one set of surveys (all of them, or one group).
+soft_duplicates_of <- function(data, kobo_survey, uuid_column, idnk_value, sm_separator,
+                               threshold, return_all_results) {
+  # Numbered from 1: the closest survey is found by its row number below, and
+  # a group split from a larger data frame keeps the larger one's row names
+  rownames(data) <- NULL
+  df <- data
   # 1) store UUIDs
   uuids <- df[[uuid_column]]
 
@@ -114,7 +150,7 @@ check_soft_duplicates <- function(dataset,
   }))
 
   # 7) add relevant columns
-  outdata <- dataset$checked_dataset[, uuid_column]
+  outdata <- data[, uuid_column, drop = FALSE]
   outdata[["num_cols_not_NA"]] <- rowSums(df != "NA")
   outdata[["total_columns_compared"]] <- ncol(df)
   outdata[[paste0("num_cols_", idnk_value)]] <- rowSums(df == idnk_value)
@@ -136,6 +172,5 @@ check_soft_duplicates <- function(dataset,
       dplyr::select(uuid, issue)
   }
 
-  dataset[[log_name]] <- as.data.frame(outdata)
-  return(dataset)
+  as.data.frame(outdata)
 }

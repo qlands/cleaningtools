@@ -19,9 +19,11 @@ add_duration(
 
 \item{uuid_column}{uuid column in the dataset. Default is uuid.}
 
-\item{start_column}{start time of the survey, in KOBO format (e.g "2021-07-14T14:02:24.955+03:00")}
+\item{start_column}{start time of the survey, in KOBO format (e.g "2021-07-14T14:02:24.955+03:00"),
+or as FormShare gives it: a POSIXct, or text such as "2021-07-14 14:02:24"}
 
-\item{end_column}{end time of the survey, in KOBO format (e.g "2021-07-14T14:03:28.955+03:00")}
+\item{end_column}{end time of the survey, in KOBO format (e.g "2021-07-14T14:03:28.955+03:00"),
+or as FormShare gives it: a POSIXct, or text such as "2021-07-14 14:03:28"}
 }
 \value{
 the clean dataset with 6 new columns: duration, start_date, start_time, end_date, end_time, days_diff
