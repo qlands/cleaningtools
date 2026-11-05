@@ -31,13 +31,16 @@ functions (`R/formshare_*.R`) and the changes listed in NEWS.md.
 
 ```r
 # install.packages("remotes")
-remotes::install_github("qlands/formshare-R-package")
+remotes::install_github("qlands/formshare-R-package") # FormShare 1.1.0 or later
 remotes::install_github("qlands/cleaningtools", ref = "FormShare")
 ```
 
-The server needs FormShare's Analytics plugin and Remote SQL plugin (2.1 or
-later). Your API key and secret are in your FormShare profile. Writing
-corrections uses the API key of an assistant who may clean the form.
+It needs R 4.1 or later. The server needs FormShare 3.2 or later, with the
+Analytics plugin and the Remote SQL plugin 2.1 or later. Your API key is on the
+edit page of your FormShare profile, where you also generate your API secret:
+FormShare shows a secret only once, when it is generated. Writing corrections
+uses the API key of an assistant who may clean the form, which the assistant's
+page in the project shows.
 
 ### The workflow
 
@@ -102,6 +105,8 @@ whole workflow, as `create_cleaning_template()` does for the original.
   `create_combined_log()`.
 - The Excel cleaning log colours its groups from a fixed palette, without
   randomcoloR, which needed V8.
+- `create_xlsx_cleaning_log()` with `use_dropdown = TRUE` no longer stops at an
+  entry that names no question, such as a soft duplicate.
 
 ---
 
@@ -110,13 +115,7 @@ whole workflow, as `create_cleaning_template()` does for the original.
 <!-- badges: start -->
 
 [![Contributor
-Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](code_of_conduct.md)
-[![R-CMD-check](https://github.com/impact-initiatives/cleaningtools/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/impact-initiatives/cleaningtools/actions/workflows/check-standard.yaml)
-[![Codecov test
-coverage](https://codecov.io/gh/impact-initiatives/cleaningtools/branch/main/graph/badge.svg)](https://app.codecov.io/gh/impact-initiatives/cleaningtools?branch=master)
-
-[![Codecov test
-coverage](https://codecov.io/gh/impact-initiatives/cleaningtools/graph/badge.svg)](https://app.codecov.io/gh/impact-initiatives/cleaningtools)
+Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 <!-- badges: end -->
 
 ## Overview
@@ -134,8 +133,10 @@ review the cleaning, such as reviewing the cleaning.
 
 ## Installation
 
-You can install the development version from
-[GitHub](https://github.com/) with:
+This version installs as shown under Installation above. IMPACT's
+original, without the FormShare functions, installs from its own
+repository. Both are called cleaningtools, so installing one replaces
+the other:
 
 ``` r
 # install.packages("devtools")

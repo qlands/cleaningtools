@@ -161,3 +161,32 @@ test_that("check_soft_duplicates can compare each survey within its group only",
   expect_true(all(result$number_different_columns[result$group == "ana"] == 0))
   expect_true(all(result$number_different_columns[result$group == "ben"] > 0))
 })
+
+# --- create_xlsx_cleaning_log's dropdowns and an entry with no question ------
+
+test_that("the dropdowns pass over an entry that names no question", {
+  survey <- data.frame(type = c("select_one yn", "integer"), name = c("q1", "q2"))
+  choices <- data.frame(list_name = "yn", name = c("yes", "no"), label = c("Yes", "No"))
+  log <- list(
+    checked_dataset = data.frame(uuid = c("a1", "a2"), q1 = c("yes", "no"), q2 = c(4, 5)),
+    cleaning_log = data.frame(
+      uuid = c("a1", "a2"),
+      question = c("q1", NA), # a2 is a soft duplicate: the whole survey
+      old_value = c("yes", NA),
+      issue = c("To confirm", "Less than 7 differents options"),
+      change_type = NA_character_,
+      new_value = NA_character_,
+      check_binding = c("q1 ~/~ a1", "NA ~/~ a2")
+    )
+  )
+  # it used to stop with "missing value where TRUE/FALSE needed"
+  workbook <- create_xlsx_cleaning_log(
+    log,
+    use_dropdown = TRUE, kobo_survey = survey, kobo_choices = choices
+  )
+  rules <- workbook$worksheets[[which(names(workbook) == "cleaning_log")]]$dataValidationsLst
+  new_value <- openxlsx::int2col(which(names(log$cleaning_log) == "new_value"))
+  # q1's new value offers its choices; the soft duplicate's offers nothing
+  expect_true(any(grepl(paste0("<xm:sqref>", new_value, "2:", new_value, "2<"), rules)))
+  expect_false(any(grepl(paste0("<xm:sqref>", new_value, "3:"), rules)))
+})

@@ -48,3 +48,7 @@ This version adds FormShare to IMPACT Initiatives' cleaningtools 0.0.0.9003.
   FormShare's own do.
 * The Excel cleaning log's colours come from a fixed palette instead of
   randomcoloR, which needed V8.
+* `create_xlsx_cleaning_log()` with `use_dropdown = TRUE` no longer stops at
+  an entry that names no question, such as a soft duplicate.
+* The package depends on R 4.1, whose pipe (`|>`) its code uses; it declared
+  R 4.0, on which it cannot be installed.

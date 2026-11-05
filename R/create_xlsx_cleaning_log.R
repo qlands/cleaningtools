@@ -248,6 +248,9 @@ create_xlsx_cleaning_log <- function(write_list,
     cl <- write_list[[cleaning_log_name]]
 
     for (r in 1:nrow(cl)) {
+      # An entry about a whole survey, such as a soft duplicate, names no
+      # question, so there is no list of values to offer for it
+      if (is.null(cl[["question"]]) || is.na(cl[["question"]][r])) next
       if (cl[r, "question"] %in% colnames(data.val) & as.character(cl[r, "uuid"]) != "all") {
         openxlsx::dataValidation(workbook,
           sheet = cleaning_log_name, cols = which(colnames(cl) == "new_value"),
