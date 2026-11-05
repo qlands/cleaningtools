@@ -151,6 +151,7 @@ fake_formshare <- function(update_answer = function(rowuuid, values, reason) {
   seen$sql <- character(0)
   seen$updates <- list()
   seen$deletions <- list()
+  seen$flag_posts <- list()
   connection <- list(
     seen = seen,
     get_tables = function(repository) FAKE_TABLES,
@@ -211,6 +212,20 @@ fake_formshare <- function(update_answer = function(rowuuid, values, reason) {
         path
       )
       path
+    },
+    # The Data Quality plugin's flags API: every submission posted is scored
+    # 100 minus 15 a flag
+    set_flags = function(repository, flags, checked = NULL, source = "script:R") {
+      seen$flag_posts[[length(seen$flag_posts) + 1]] <- list(
+        repository = repository, flags = flags, checked = checked, source = source
+      )
+      records <- unique(c(checked, flags$rowuuid))
+      counts <- table(factor(flags$rowuuid, levels = records))
+      invisible(list(
+        records = length(records), added = nrow(flags), updated = 0, resolved = 0,
+        gone = character(0),
+        scores = data.frame(rowuuid = records, score = 100 - 15 * as.numeric(counts))
+      ))
     }
   )
   connection

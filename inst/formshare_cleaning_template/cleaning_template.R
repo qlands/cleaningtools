@@ -85,6 +85,16 @@ checks_logs <- checks_logs |>
     description_column = "description"
   )
 
+# Flagging in FormShare ----------------------------------------------------------
+# With FormShare's Data Quality plugin, what the checks found becomes flags on
+# the submissions, and each one's Data Quality Score drops by the weights of
+# its flags, where the team sees it. Run it again after the cleaning: the flags
+# of what was fixed are resolved. It needs an account that owns, administers or
+# edits the project.
+flagged <- fs_flag_checks(connection, repository, checks_logs,
+  severity = "minor" # or one for each check: c(potential_outliers = "major", ...)
+)
+
 # Creating the cleaning log ----------------------------------------------------
 cleaning_log <- checks_logs |>
   create_combined_log() |>

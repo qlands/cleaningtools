@@ -23,6 +23,10 @@ This version adds FormShare to IMPACT Initiatives' cleaningtools 0.0.0.9003.
   it to the logs.
 * `fs_review_cleaning()` reviews the cleaning against FormShare's record of
   changes.
+* `fs_flag_checks()` makes what the checks found Data Quality flags in
+  FormShare (its Data Quality plugin), which lower each submission's Data
+  Quality Score. Every submission checked is posted, so the checks run again
+  after the cleaning resolve the flags of what was fixed.
 * `fs_check_pii()` adds the questions FormShare marks as sensitive or
   encrypted to `check_pii()`'s.
 * `fs_expand_select_multiple()` adds a column per option of a select multiple,

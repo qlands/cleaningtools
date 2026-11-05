@@ -33,6 +33,9 @@ quality pages:
   The form's questions and choices come from FormShare too, in the shape of the
   XLSForm sheets the functions take (`kobo_survey`, `kobo_choices`), and the
   ODK audits come from FormShare instead of a zip of audit.csv files.
+- **Flagging.** What the checks find can be Data Quality flags in FormShare,
+  which lower each submission's Data Quality Score where the whole team sees
+  it. The same checks, run again after the cleaning, resolve them.
 - **Writing.** The corrections of a filled cleaning log are made in FormShare,
   through its cleaning API, each with its reason. They are not made in a copy of
   the data. FormShare's audit log records the old value, the new one, who made
@@ -52,12 +55,13 @@ functions (`R/formshare_*.R`) and the changes listed in NEWS.md.
 
 ```{r, eval = FALSE}
 # install.packages("remotes")
-remotes::install_github("qlands/formshare-R-package") # FormShare 1.1.0 or later
+remotes::install_github("qlands/formshare-R-package") # FormShare 1.2.0 or later
 remotes::install_github("qlands/cleaningtools", ref = "FormShare")
 ```
 
 It needs R 4.1 or later. The server needs FormShare 3.2 or later, with the
-Analytics plugin and the Remote SQL plugin 2.1 or later. Your API key is on the
+Analytics plugin and the Remote SQL plugin 2.1 or later, and for the flags the
+Data Quality plugin. Your API key is on the
 edit page of your FormShare profile, where you also generate your API secret:
 FormShare shows a secret only once, when it is generated. Writing corrections
 uses the API key of an assistant who may clean the form, which the assistant's
@@ -79,24 +83,35 @@ survey <- fs_survey(connection, repository)
 choices <- fs_choices(connection, repository)
 
 # 2. Check, as with any data: a record is named by its rowuuid
-log <- households |>
+checks <- households |>
   check_outliers(uuid_column = "rowuuid", kobo_survey = survey, kobo_choices = choices) |>
   check_soft_duplicates(kobo_survey = survey, uuid_column = "rowuuid", group_column = "_submitted_by") |>
-  fs_check_pii(survey = survey) |>
+  fs_check_pii(survey = survey)
+
+# 3. Flag what they found in FormShare: each submission's Data Quality Score
+#    drops by the weights of its flags
+fs_flag_checks(connection, repository, checks,
+               severity = c(potential_outliers = "major", soft_duplicate_log = "minor"))
+
+# 4. The cleaning log, to fill in Excel
+log <- checks |>
   create_combined_log() |>
   add_info_to_cleaning_log(dataset_uuid_column = "rowuuid",
                            information_to_add = c("_submitted_by", "_submitted_date"))
 create_xlsx_cleaning_log(log, use_dropdown = TRUE, kobo_survey = survey,
                          kobo_choices = choices, output_path = "cleaning_log.xlsx")
 
-# 3. Apply the filled log in FormShare: a dry run first, then for real
+# 5. Apply the filled log in FormShare: a dry run first, then for real
 filled <- readxl::read_excel("cleaning_log_filled.xlsx", sheet = "cleaning_log")
 fs_apply_cleaning_log(connection, repository, filled)
 fs_apply_cleaning_log(connection, repository, filled, dry_run = FALSE)
 
-# 4. Review what FormShare recorded against the log
+# 6. Review what FormShare recorded against the log
 fs_review_cleaning(connection, repository, filled)
 ```
+
+After the cleaning, read the data again and run steps 2 and 3 once more: the
+flags of what was fixed are resolved, and the scores go back up.
 
 `create_formshare_cleaning_template()` copies a template project with the
 whole workflow, as `create_cleaning_template()` does for the original.
@@ -112,6 +127,7 @@ whole workflow, as `create_cleaning_template()` does for the original.
 | `check_pii()` looks at column names | `fs_check_pii()` adds what FormShare marks as sensitive or encrypted |
 | Kobo's select multiple columns (`crops.maize`) | FormShare keeps the codes in one column; `fs_expand_select_multiple()` adds a column per option for the functions that read them |
 | `check_soft_duplicates()` over every survey | `group_column = "_submitted_by"` compares each interview with the same assistant's other interviews |
+| The checks' logs stay in R | `fs_flag_checks()` makes what they found Data Quality flags in FormShare, which lower each submission's score where the team sees it |
 
 ### Fixed in the original functions
 
