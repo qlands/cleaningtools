@@ -47,7 +47,7 @@ Imports:
     tidyselect,
     utils
 Remotes:
-    qlands/formshare-R-package
+    FormShare=github::qlands/formshare-R-package
 Suggests:
     knitr,
     rmarkdown,
