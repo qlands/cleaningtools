@@ -17,6 +17,10 @@ options(scipen = 999)
 
 ## cleaningtools, with FormShare
 
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/qlands/cleaningtools/actions/workflows/check-standard.yaml/badge.svg?branch=FormShare)](https://github.com/qlands/cleaningtools/actions/workflows/check-standard.yaml?query=branch%3AFormShare)
+<!-- badges: end -->
+
 This is IMPACT Initiatives' [cleaningtools](https://github.com/impact-initiatives/cleaningtools)
 with [FormShare](https://github.com/qlands/FormShare) added. Everything the
 original package does, it still does, in the same way: the documentation below
