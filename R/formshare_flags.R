@@ -2,8 +2,8 @@
 #
 # The checks of cleaningtools write logs. With FormShare's Data Quality
 # plugin, what they found can also be flags on the submissions, which lower
-# each one's Data Quality Score where the whole team sees it: the Data
-# quality page, Clean data and the assistants' phones. The flags go through
+# each one's Data Quality Score where the team reviews them: the form's Data
+# quality page and Clean data. The flags go through
 # the plugin's flags API (the FormShare R package's set_flags), from a source
 # of their own, so FormShare's own checks keep theirs.
 
